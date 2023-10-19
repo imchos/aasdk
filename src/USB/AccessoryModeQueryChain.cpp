@@ -58,7 +58,11 @@ void AccessoryModeQueryChain::start(DeviceHandle handle, Promise::Pointer promis
                 });
 
             this->startQuery(AccessoryModeQueryType::PROTOCOL_VERSION,
+#if BOOST_VERSION < 106600
                              std::make_shared<USBEndpoint>(usbWrapper_, strand_.get_io_service(), std::move(handle)),
+#else
+                             std::make_shared<USBEndpoint>(usbWrapper_, strand_.context(), std::move(handle)),
+#endif
                              std::move(queryPromise));
         }
     });

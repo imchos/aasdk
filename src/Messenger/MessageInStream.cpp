@@ -18,6 +18,7 @@
 
 #include <f1x/aasdk/Messenger/MessageInStream.hpp>
 #include <f1x/aasdk/Error/Error.hpp>
+#include <f1x/aasdk/Common/Log.hpp>
 
 namespace f1x
 {
@@ -66,14 +67,25 @@ void MessageInStream::receiveFrameHeaderHandler(const common::DataConstBuffer& b
 
     if(message_ == nullptr)
     {
-        message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
+        //message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
+        if (messageBig_ != nullptr && messageBig_->getChannelId() == frameHeader.getChannelId()) {
+            message_ = std::move(messageBig_);
+            messageBig_ = nullptr;
+            //AASDK_LOG(debug) << "[chos] " << (int) message_->getChannelId();
+        }
+        else {
+            message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
+        }
     }
     else if(message_->getChannelId() != frameHeader.getChannelId())
     {
-        message_.reset();
-        promise_->reject(error::Error(error::ErrorCode::MESSENGER_INTERTWINED_CHANNELS));
-        promise_.reset();
-        return;
+        //message_.reset();
+        //promise_->reject(error::Error(error::ErrorCode::MESSENGER_INTERTWINED_CHANNELS));
+        //promise_.reset();
+        //return;
+        messageBig_ = std::move(message_);
+        message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
+        //AASDK_LOG(debug) << "[chos] " << (int) messageBig_->getChannelId() << " " << (int) message_->getChannelId() << " recentFrameType_ " << (int) recentFrameType_;
     }
 
     recentFrameType_ = frameHeader.getType();

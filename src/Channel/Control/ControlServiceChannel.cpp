@@ -124,6 +124,15 @@ void ControlServiceChannel::sendPingRequest(const proto::messages::PingRequest& 
     this->send(std::move(message), std::move(promise));
 }
 
+void ControlServiceChannel::sendPingResponse(const proto::messages::PingResponse& response, SendPromise::Pointer promise)
+{
+    auto message(std::make_shared<messenger::Message>(channelId_, messenger::EncryptionType::ENCRYPTED, messenger::MessageType::SPECIFIC));
+    message->insertPayload(messenger::MessageId(proto::ids::ControlMessage::PING_RESPONSE).getData());
+    message->insertPayload(response);
+
+    this->send(std::move(message), std::move(promise));
+}
+
 void ControlServiceChannel::receive(IControlServiceChannelEventHandler::Pointer eventHandler)
 {
     auto receivePromise  = messenger::ReceivePromise::defer(strand_);
@@ -160,6 +169,9 @@ void ControlServiceChannel::messageHandler(messenger::Message::Pointer message, 
         break;
     case proto::ids::ControlMessage::NAVIGATION_FOCUS_REQUEST:
         this->handleNavigationFocusRequest(payload, std::move(eventHandler));
+        break;
+    case proto::ids::ControlMessage::PING_REQUEST:
+        this->handlePingRequest(payload, std::move(eventHandler));
         break;
     case proto::ids::ControlMessage::PING_RESPONSE:
         this->handlePingResponse(payload, std::move(eventHandler));
@@ -241,6 +253,19 @@ void ControlServiceChannel::handleNavigationFocusRequest(const common::DataConst
     if(request.ParseFromArray(payload.cdata, payload.size))
     {
         eventHandler->onNavigationFocusRequest(request);
+    }
+    else
+    {
+        eventHandler->onChannelError(error::Error(error::ErrorCode::PARSE_PAYLOAD));
+    }
+}
+
+void ControlServiceChannel::handlePingRequest(const common::DataConstBuffer& payload, IControlServiceChannelEventHandler::Pointer eventHandler)
+{
+    proto::messages::PingRequest request;
+    if(request.ParseFromArray(payload.cdata, payload.size))
+    {
+        eventHandler->onPingRequest(request);
     }
     else
     {

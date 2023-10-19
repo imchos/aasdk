@@ -19,7 +19,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <libusb.h>
+//#include <libusb.h>
 #include <list>
 #include <f1x/aasdk/USB/IUSBEndpoint.hpp>
 #include <f1x/aasdk/USB/IUSBWrapper.hpp>
